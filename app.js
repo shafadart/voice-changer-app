@@ -211,6 +211,7 @@ downloadBtn.addEventListener('click', async () => {
 });
 
 // 5. Share
+// 5. Share
 shareBtn.addEventListener('click', async () => {
     if (!originalAudioBlob) return;
 
@@ -218,8 +219,21 @@ shareBtn.addEventListener('click', async () => {
     shareBtn.textContent = "Processing...";
     shareBtn.disabled = true;
 
+    let finalBlob;
+
+    // Step 1: Process Audio
     try {
-        const finalBlob = await processAudioEffect(currentEffect);
+        finalBlob = await processAudioEffect(currentEffect);
+    } catch (processErr) {
+        console.error("Processing Failed:", processErr);
+        alert("Could not process audio: " + processErr.message);
+        shareBtn.textContent = originalText;
+        shareBtn.disabled = false;
+        return; // Stop if processing fails
+    }
+
+    // Step 2: Share
+    try {
         const file = new File([finalBlob], `voice_${currentEffect}_${Date.now()}.wav`, { type: 'audio/wav' });
 
         if (navigator.share) {
@@ -232,14 +246,20 @@ shareBtn.addEventListener('click', async () => {
             throw new Error("Sharing not supported");
         }
     } catch (shareError) {
-        console.warn("Share failed, falling back to download", shareError);
-        // Fallback to download if share fails (but we have a button for that now, so maybe just alert?)
-        // Let's keep the fallback but notify user
+        console.warn("Share failed:", shareError);
+
+        // If it's not a user cancellation, offer download
         if (shareError.name !== 'AbortError') {
-            alert("Sharing not supported on this device/browser. Downloading file instead.");
-            const url = URL.createObjectURL(await processAudioEffect(currentEffect)); // Re-process is expensive, but safe. 
-            // Actually, better to reuse blob? playBtn logic creates new one. 
-            // Let's just trigger the download logic manually or just tell them to use Save.
+            const shouldDownload = confirm("Sharing is not supported or failed. Download the file instead?");
+            if (shouldDownload) {
+                const url = URL.createObjectURL(finalBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `voice_${currentEffect}.wav`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
         }
     } finally {
         shareBtn.textContent = originalText;
@@ -248,112 +268,116 @@ shareBtn.addEventListener('click', async () => {
 });
 
 // Core Audio Processing Logic
+// Core Audio Processing Logic
 async function processAudioEffect(effectType) {
-    // Convert Blob to ArrayBuffer
-    const arrayBuffer = await originalAudioBlob.arrayBuffer();
+    let offlineRenderer;
+    try {
+        // 1. Convert Blob to ArrayBuffer
+        const arrayBuffer = await originalAudioBlob.arrayBuffer();
 
-    // Decode Audio
-    const offlineCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const audioBuffer = await offlineCtx.decodeAudioData(arrayBuffer);
+        // 2. Decode Audio
+        // Use a new AudioContext for decoding to avoid issues with closed contexts
+        const decodeCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const audioBuffer = await decodeCtx.decodeAudioData(arrayBuffer);
 
-    // Setup Rendering Context
-    // We might need to adjust duration for playbackRate
-    let playbackRate = 1.0;
-    if (effectType === 'helium') playbackRate = 1.4;
-    if (effectType === 'giant') playbackRate = 0.7;
-    // Robot uses Ring Mod, so rate is 1.0 usually, or maybe slightly slower? Let's keep 1.0
-    if (effectType === 'robot') playbackRate = 1.0;
-    if (effectType === 'cave') playbackRate = 1.0;
+        // 3. Configure Offline Renderer
+        let playbackRate = 1.0;
+        if (effectType === 'helium') playbackRate = 1.4;
+        if (effectType === 'giant') playbackRate = 0.7;
+        if (effectType === 'robot') playbackRate = 1.0;
+        if (effectType === 'cave') playbackRate = 1.0;
 
-    const userDuration = audioBuffer.duration / playbackRate;
-    const length = Math.ceil(userDuration * audioBuffer.sampleRate);
+        // Calculate duration and length
+        // IMPORTANT: Use the decoded buffer's sample rate for the offline context
+        // This prevents resampling artifacts and support issues
+        const originalDuration = audioBuffer.duration;
+        const processedDuration = originalDuration / playbackRate;
 
-    const offlineRenderer = new OfflineAudioContext(
-        audioBuffer.numberOfChannels,
-        length,
-        audioBuffer.sampleRate
-    );
+        // Add extra time for reverb tail if needed
+        const tailSeconds = (effectType === 'cave') ? 2.0 : 0.5;
+        const totalDuration = processedDuration + tailSeconds;
 
-    const source = offlineRenderer.createBufferSource();
-    source.buffer = audioBuffer;
-    source.playbackRate.value = playbackRate;
+        const sampleRate = audioBuffer.sampleRate;
+        const length = Math.ceil(totalDuration * sampleRate);
 
-    const destination = offlineRenderer.destination;
+        offlineRenderer = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(
+            audioBuffer.numberOfChannels,
+            length,
+            sampleRate
+        );
 
-    // Effect Chain
-    if (effectType === 'robot') {
-        // Ring Modulator Effect
-        // 1. Create Oscillator (Modulator)
-        const oscillator = offlineRenderer.createOscillator();
-        oscillator.type = 'sine';
-        oscillator.frequency.value = 50; // 50Hz for robotic buzz
+        // 4. Create Source
+        const source = offlineRenderer.createBufferSource();
+        source.buffer = audioBuffer;
+        source.playbackRate.value = playbackRate;
 
-        // 2. Create Gain for modulation
-        const modGain = offlineRenderer.createGain();
-        modGain.gain.value = 0.0; // Start at 0, modulate around it? 
-        // Actually for Ring Mod: Out = In * Carrier.
-        // We need a GainNode where 'In' is audio, and 'Gain' is controlled by Carrier.
-        // But Gain AudioParam is 0 to 1? No, it can be negative.
+        // 5. Connect Effect Chain
+        const destination = offlineRenderer.destination;
 
-        // Proper Ring Mod in Web Audio:
-        // Source -> GainNode (as Input) -> Dest
-        // Osc -> GainNode.gain
+        if (effectType === 'robot') {
+            // Ring Modulator
+            const oscillator = offlineRenderer.createOscillator();
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 50;
 
-        // But we need Osc to be centered at 0? Yes.
-        // If Playback is normal, Gain is 1.
-        // If Ring Mod, we want Gain to oscillate between -1 and 1?
-        // Gain default value is 1. If we connect Osc, it adds to 1. So 0 to 2.
-        // We set Gain.gain.value = 0. Then Osc (-1 to 1) makes it -1 to 1.
+            const ringMod = offlineRenderer.createGain();
+            ringMod.gain.value = 0;
 
-        const ringMod = offlineRenderer.createGain();
-        ringMod.gain.value = 0;
+            // Robot: Source -> RingMod (Modulated by Osc) -> LowPass -> Dest
+            source.connect(ringMod);
+            oscillator.connect(ringMod.gain);
 
-        source.connect(ringMod);
-        oscillator.connect(ringMod.gain);
+            const filter = offlineRenderer.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 2000;
 
-        // Add a bit of dry signal? Or maybe a filter?
-        // Robot usually needs to be monotonic. 
-        // Let's add a LowPass to smooth the harshness
-        const filter = offlineRenderer.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 2000;
+            ringMod.connect(filter);
+            filter.connect(destination);
 
-        ringMod.connect(filter);
-        filter.connect(destination);
-
-        oscillator.start();
-    }
-    else if (effectType === 'cave') {
-        const convolver = offlineRenderer.createConvolver();
-        // Create Reverb Impulse
-        const rate = audioBuffer.sampleRate;
-        const length = rate * 2.5;
-        const decay = 2.0;
-        const impulse = offlineRenderer.createBuffer(2, length, rate);
-        const impulseL = impulse.getChannelData(0);
-        const impulseR = impulse.getChannelData(1);
-        for (let i = 0; i < length; i++) {
-            const n = length - i;
-            // Simple noise impulse
-            impulseL[i] = (Math.random() * 2 - 1) * Math.pow(n / length, decay);
-            impulseR[i] = (Math.random() * 2 - 1) * Math.pow(n / length, decay);
+            oscillator.start();
         }
-        convolver.buffer = impulse;
-        source.connect(convolver);
-        convolver.connect(destination);
+        else if (effectType === 'cave') {
+            // Reverb
+            const convolver = offlineRenderer.createConvolver();
+
+            // Impulse Response
+            const impulseLen = sampleRate * 2.0;
+            const impulse = offlineRenderer.createBuffer(2, impulseLen, sampleRate);
+            const impulseL = impulse.getChannelData(0);
+            const impulseR = impulse.getChannelData(1);
+
+            for (let i = 0; i < impulseLen; i++) {
+                const decay = 2.0;
+                const n = impulseLen - i;
+                const vol = Math.pow(n / impulseLen, decay);
+                impulseL[i] = (Math.random() * 2 - 1) * vol;
+                impulseR[i] = (Math.random() * 2 - 1) * vol;
+            }
+            convolver.buffer = impulse;
+
+            // Dry/Wet Mix
+            // Connect Source -> Dest (Dry)
+            // Connect Source -> Convolver -> Dest (Wet)
+            // But usually for cave we want mostly wet
+            source.connect(convolver);
+            convolver.connect(destination);
+            // Also connect dry for clarity?
+            // source.connect(destination); 
+        }
+        else {
+            source.connect(destination);
+        }
+
+        source.start();
+
+        // 6. Provide output
+        const renderedBuffer = await offlineRenderer.startRendering();
+        return bufferToWave(renderedBuffer, renderedBuffer.length);
+
+    } catch (err) {
+        console.error("Audio Processing Failed at step:", err);
+        throw new Error(`Processing failed: ${err.message || err}`);
     }
-    else {
-        // Normal, Helium, Giant
-        source.connect(destination);
-    }
-
-    source.start();
-
-    // Render
-    const renderedBuffer = await offlineRenderer.startRendering();
-
-    // Convert to WAV Blob
-    return bufferToWave(renderedBuffer, renderedBuffer.length);
 }
 
 // Utility: Wav Converter
