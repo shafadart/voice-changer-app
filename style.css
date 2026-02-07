@@ -247,19 +247,13 @@ canvas {
 
 .effects-row {
     display: flex;
+    flex-wrap: wrap;
+    /* Allow wrapping */
+    justify-content: center;
+    /* Center align */
     gap: 12px;
-    overflow-x: auto;
     padding-bottom: 8px;
-    /* For scrollbar */
-    padding-left: 4px;
-    padding-right: 4px;
-    /* Hide scrollbar for clean look */
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-
-.effects-row::-webkit-scrollbar {
-    display: none;
+    width: 100%;
 }
 
 .voice-btn {
@@ -267,6 +261,8 @@ canvas {
     border: 1px solid transparent;
     border-radius: 16px;
     padding: 12px;
+    width: calc(33.33% - 8px);
+    /* 3 per row approx */
     min-width: 80px;
     display: flex;
     flex-direction: column;
@@ -278,26 +274,34 @@ canvas {
     transition: all 0.2s;
 }
 
-.voice-btn .emoji {
-    font-size: 24px;
-}
-
-.voice-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-}
-
-.voice-btn.active {
-    background: rgba(10, 132, 255, 0.2);
-    border-color: var(--primary);
-    box-shadow: 0 0 15px rgba(10, 132, 255, 0.3);
-}
-
 /* Controls */
 .controls {
     display: flex;
+    flex-wrap: wrap;
+    /* Allow wrapping */
+    justify-content: center;
     gap: 12px;
     width: 100%;
     margin-top: 24px;
+}
+
+/* Signature */
+.signature-link {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'Segoe Script', 'Brush Script MT', cursive;
+    /* Signature style */
+    text-decoration: none;
+    font-size: 16px;
+    z-index: 20;
+    transition: opacity 0.3s;
+}
+
+.signature-link:hover {
+    opacity: 1;
+    color: var(--primary);
 }
 
 .hidden {
