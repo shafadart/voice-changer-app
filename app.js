@@ -309,6 +309,7 @@ async function processAudioEffect(effectType) {
         // 4. Create Source
         const source = offlineRenderer.createBufferSource();
         source.buffer = audioBuffer;
+        source.playbackRate.value = playbackRate;
 
         // 5. Connect Effect Chain
         const destination = offlineRenderer.destination;
@@ -410,7 +411,14 @@ function bufferToWave(abuffer, len) {
 
     while (pos < length) {
         for (i = 0; i < numOfChan; i++) {
-            sample = Math.max(-1, Math.min(1, channels[i][offset]));
+            // Check if offset exists to avoid "Offset is outside the bounds" error
+            // if resampling causes slight length mismatch
+            let val = 0;
+            if (offset < channels[i].length) {
+                val = channels[i][offset];
+            }
+
+            sample = Math.max(-1, Math.min(1, val));
             sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
             view.setInt16(pos, sample, true);
             pos += 2;
