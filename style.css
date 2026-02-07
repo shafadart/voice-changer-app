@@ -274,6 +274,20 @@ canvas {
     transition: all 0.2s;
 }
 
+.voice-btn .emoji {
+    font-size: 24px;
+}
+
+.voice-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.voice-btn.active {
+    background: rgba(10, 132, 255, 0.2);
+    border-color: var(--primary);
+    box-shadow: 0 0 15px rgba(10, 132, 255, 0.3);
+}
+
 /* Controls */
 .controls {
     display: flex;
@@ -287,21 +301,27 @@ canvas {
 
 /* Signature */
 .signature-link {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
+    position: fixed;
+    /* Fixed to viewport */
+    bottom: 15px;
+    right: 15px;
     color: rgba(255, 255, 255, 0.5);
     font-family: 'Segoe Script', 'Brush Script MT', cursive;
-    /* Signature style */
     text-decoration: none;
-    font-size: 16px;
-    z-index: 20;
-    transition: opacity 0.3s;
+    font-size: 14px;
+    z-index: 9999;
+    /* Always on top */
+    transition: all 0.3s;
+    background: rgba(0, 0, 0, 0.2);
+    /* Slight background for contrast */
+    padding: 4px 8px;
+    border-radius: 4px;
 }
 
 .signature-link:hover {
     opacity: 1;
     color: var(--primary);
+    background: rgba(0, 0, 0, 0.4);
 }
 
 .hidden {
