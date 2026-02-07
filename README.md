@@ -1,4 +1,4 @@
-# 🎙️ Voice Changer Web App
+# 🎙️ SR Dart MOB
 
 A premium, glassmorphism-styled Voice Changer built as a Progressive Web App (PWA).  
 Record your voice, apply funny effects, and share directly to Messenger/WhatsApp!
@@ -15,10 +15,12 @@ Record your voice, apply funny effects, and share directly to Messenger/WhatsApp
 2. Open `index.html` in your browser.
    > **Note**: Audio recording requires a secure context (HTTPS) or localhost. Opening via `file://` might block microphone access on some browsers.
 
-## 🌐 Deployment (Vercel)
+## 🌐 Deployment (Netlify)
 1. Push this code to GitHub.
-2. Import the repo to Vercel.
-3. Your app is live!
+2. Log in to [Netlify](https://app.netlify.com/).
+3. Click **"Add new site"** -> **"Import an existing project"**.
+4. Connect GitHub and select this repo.
+5. Click **"Deploy"** (No build settings needed for this static app).
 
 ---
 *Created for fun & pranks!* 🎈

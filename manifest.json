@@ -1,6 +1,6 @@
 {
-    "name": "Voice Changer",
-    "short_name": "VoiceApp",
+    "name": "SR Dart MOB",
+    "short_name": "SR Dart MOB",
     "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#000000",
