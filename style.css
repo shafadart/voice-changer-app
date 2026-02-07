@@ -330,3 +330,18 @@ button:active {
     color: var(--text-main);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+.action-btn {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--primary);
+    border: 1px solid var(--primary-glow);
+}
+
+.action-btn:hover {
+    background: rgba(10, 132, 255, 0.1);
+}
+
+.controls button .icon {
+    font-style: normal;
+    margin-right: 6px;
+}
