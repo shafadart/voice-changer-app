@@ -183,9 +183,11 @@ async function processAndShare(effectType) {
 
         // Create Offline Context
         const userDuration = audioBuffer.duration / playbackRate;
+        const length = Math.ceil(userDuration * audioBuffer.sampleRate); // MUST be integer
+
         const offlineRenderer = new OfflineAudioContext(
             audioBuffer.numberOfChannels,
-            userDuration * audioBuffer.sampleRate, // Total samples
+            length,
             audioBuffer.sampleRate
         );
 
@@ -226,25 +228,33 @@ async function processAndShare(effectType) {
         const file = new File([finalBlob], `voice_${effectType}_${Date.now()}.wav`, { type: 'audio/wav' });
 
         // Share
-        if (navigator.share) {
-            await navigator.share({
-                files: [file],
-                title: 'Funny Voice Message',
-                text: 'Listen to my funny voice!'
-            });
-        } else {
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Funny Voice Message',
+                    text: 'Listen to my funny voice!'
+                });
+            } else {
+                throw new Error("Sharing not supported");
+            }
+        } catch (shareError) {
+            console.warn("Share failed, falling back to download", shareError);
             // Download fallback
             const url = URL.createObjectURL(finalBlob);
             const a = document.createElement('a');
             a.href = url;
             a.download = `voice_${effectType}.wav`;
             a.click();
-            alert("Prepared for sharing! File downloaded.");
+            // Don't alert if user cancelled share, just log
+            if (shareError.name !== 'AbortError') {
+                alert("Sharing failed, file downloaded instead.");
+            }
         }
 
     } catch (err) {
         console.error("Processing Error:", err);
-        alert("Something went wrong while processing.");
+        alert("Error details: " + err.message);
     } finally {
         shareBtn.textContent = originalBtnText;
         shareBtn.disabled = false;
