@@ -288,8 +288,9 @@ async function processAudioEffect(effectType) {
         if (effectType === 'cave') playbackRate = 1.0;
 
         // Calculate duration and length
-        // IMPORTANT: Use the decoded buffer's sample rate for the offline context
-        // This prevents resampling artifacts and support issues
+        // FIX: Force 44100Hz output to prevent "fast speech" issues on mobile (48k/96k mismatches)
+        const TARGET_SAMPLE_RATE = 44100;
+
         const originalDuration = audioBuffer.duration;
         const processedDuration = originalDuration / playbackRate;
 
@@ -297,19 +298,17 @@ async function processAudioEffect(effectType) {
         const tailSeconds = (effectType === 'cave') ? 2.0 : 0.5;
         const totalDuration = processedDuration + tailSeconds;
 
-        const sampleRate = audioBuffer.sampleRate;
-        const length = Math.ceil(totalDuration * sampleRate);
+        const length = Math.ceil(totalDuration * TARGET_SAMPLE_RATE);
 
         offlineRenderer = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(
             audioBuffer.numberOfChannels,
             length,
-            sampleRate
+            TARGET_SAMPLE_RATE
         );
 
         // 4. Create Source
         const source = offlineRenderer.createBufferSource();
         source.buffer = audioBuffer;
-        source.playbackRate.value = playbackRate;
 
         // 5. Connect Effect Chain
         const destination = offlineRenderer.destination;
