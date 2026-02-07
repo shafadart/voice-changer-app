@@ -1,0 +1,332 @@
+:root {
+    --primary: #0A84FF;
+    --primary-glow: rgba(10, 132, 255, 0.5);
+    --glass-bg: rgba(20, 20, 20, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --text-main: #FFFFFF;
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --danger: #FF453A;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background: #000;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Background Animated Blobs */
+.background-blobs {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    filter: blur(80px);
+    opacity: 0.6;
+}
+
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    animation: floating 10s infinite ease-in-out;
+}
+
+.blob-1 {
+    width: 300px;
+    height: 300px;
+    background: #4A00E0;
+    top: -50px;
+    left: -50px;
+    animation-delay: 0s;
+}
+
+.blob-2 {
+    width: 250px;
+    height: 250px;
+    background: #8E2DE2;
+    bottom: -50px;
+    right: -50px;
+    animation-delay: -2s;
+}
+
+.blob-3 {
+    width: 200px;
+    height: 200px;
+    background: #00C6FF;
+    bottom: 20%;
+    left: 20%;
+    animation-delay: -5s;
+}
+
+@keyframes floating {
+
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    50% {
+        transform: translate(20px, -20px) scale(1.1);
+    }
+}
+
+/* Glass Card */
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid var(--glass-border);
+    border-radius: 32px;
+    padding: 24px;
+    width: 90%;
+    max-width: 380px;
+    z-index: 10;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    max-height: 90vh;
+    /* Prevent overflow on small screens */
+    overflow-y: auto;
+}
+
+@keyframes popIn {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+header h1 {
+    color: var(--text-main);
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    letter-spacing: -0.5px;
+}
+
+header p {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+/* Visualizer & Mic Area */
+.visualizer-container {
+    position: relative;
+    margin: 24px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+canvas {
+    position: absolute;
+    width: 100%;
+    height: 100px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.mic-button-wrapper {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    z-index: 2;
+}
+
+.mic-button {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #3A3A3A, #1A1A1A);
+    color: var(--text-main);
+    cursor: pointer;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mic-button:active {
+    transform: scale(0.95);
+}
+
+.mic-button.recording {
+    background: linear-gradient(135deg, #FF453A, #D60000);
+    box-shadow: 0 0 30px rgba(255, 69, 58, 0.5);
+}
+
+.pulse-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid var(--primary);
+    opacity: 0;
+    z-index: -1;
+}
+
+.recording+.pulse-ring {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        width: 100%;
+        height: 100%;
+        opacity: 0.8;
+        border-color: #FF453A;
+    }
+
+    100% {
+        width: 220%;
+        height: 220%;
+        opacity: 0;
+        border-color: #FF453A;
+    }
+}
+
+.timer {
+    margin-top: 16px;
+    font-family: monospace;
+    font-size: 14px;
+    color: var(--text-secondary);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.timer.visible {
+    opacity: 1;
+}
+
+/* Voice Selection Section */
+.voice-selection {
+    width: 100%;
+    margin-top: 16px;
+    text-align: left;
+}
+
+.section-title {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    margin-left: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.effects-row {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    /* For scrollbar */
+    padding-left: 4px;
+    padding-right: 4px;
+    /* Hide scrollbar for clean look */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.effects-row::-webkit-scrollbar {
+    display: none;
+}
+
+.voice-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid transparent;
+    border-radius: 16px;
+    padding: 12px;
+    min-width: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.voice-btn .emoji {
+    font-size: 24px;
+}
+
+.voice-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.voice-btn.active {
+    background: rgba(10, 132, 255, 0.2);
+    border-color: var(--primary);
+    box-shadow: 0 0 15px rgba(10, 132, 255, 0.3);
+}
+
+/* Controls */
+.controls {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    margin-top: 24px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+button {
+    padding: 14px 24px;
+    border-radius: 16px;
+    border: none;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    flex: 1;
+}
+
+button:active {
+    transform: scale(0.96);
+}
+
+.primary-btn {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 8px 16px var(--primary-glow);
+}
+
+.secondary-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}

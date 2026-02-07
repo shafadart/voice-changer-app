@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Voice Changer</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <!-- Main Floating Card -->
+    <main class="glass-card" id="mainCard">
+        <header>
+            <h1>Voice Changer</h1>
+            <p>Tap to Record</p>
+        </header>
+
+        <div class="visualizer-container">
+            <canvas id="visualizer"></canvas>
+            <div class="mic-button-wrapper">
+                <button id="recordBtn" class="mic-button">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                </button>
+                <div class="pulse-ring"></div>
+            </div>
+            <div class="timer" id="timer">00:00</div>
+        </div>
+
+        <div class="voice-selection">
+            <p class="section-title">Select Voice Effect</p>
+            <div class="effects-row">
+                <button class="voice-btn active" data-effect="normal">
+                    <span class="emoji">👤</span>
+                    <span>Normal</span>
+                </button>
+                <button class="voice-btn" data-effect="helium">
+                    <span class="emoji">🎈</span>
+                    <span>Helium</span>
+                </button>
+                <button class="voice-btn" data-effect="giant">
+                    <span class="emoji">👹</span>
+                    <span>Giant</span>
+                </button>
+                <button class="voice-btn" data-effect="robot">
+                    <span class="emoji">🤖</span>
+                    <span>Robot</span>
+                </button>
+                <button class="voice-btn" data-effect="cave">
+                    <span class="emoji">🦇</span>
+                    <span>Cave</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="controls hidden" id="controls">
+            <button id="discardBtn" class="secondary-btn">Discard</button>
+            <button id="shareBtn" class="primary-btn">Share Audio</button>
+        </div>
+    </main>
+
+
+    <script src="app.js"></script>
+</body>
+
+</html>
