@@ -431,3 +431,62 @@ function bufferToWave(abuffer, len) {
     function setUint16(data) { view.setUint16(pos, data, true); pos += 2; }
     function setUint32(data) { view.setUint32(pos, data, true); pos += 4; }
 }
+
+/* =========================================
+   NOTE: One-Time Password Logic
+   Password: "DARTmob5499"
+   ========================================= */
+(function initAuth() {
+    const loginModal = document.getElementById('loginModal');
+    const loginBtn = document.getElementById('loginBtn');
+    const passwordInput = document.getElementById('passwordInput');
+    const loginError = document.getElementById('loginError');
+    const mainCard = document.getElementById('mainCard'); // Main app container
+
+    const CORRECT_PASS = "DARTmob5499";
+    const AUTH_KEY = "SR_Dart_Access";
+
+    // 1. Check if already authenticated
+    const isAuth = localStorage.getItem(AUTH_KEY);
+
+    if (isAuth === 'granted') {
+        loginModal.classList.add('hidden');
+        // Optional: remove from DOM after transition
+        setTimeout(() => loginModal.style.display = 'none', 600);
+    } else {
+        // Not authenticated
+        loginModal.classList.remove('hidden');
+    }
+
+    // 2. Login Function
+    function attemptLogin() {
+        const inputVal = passwordInput.value.trim();
+
+        if (inputVal === CORRECT_PASS) {
+            // Success
+            localStorage.setItem(AUTH_KEY, 'granted');
+            loginModal.classList.add('hidden');
+            setTimeout(() => loginModal.style.display = 'none', 600);
+            passwordInput.blur(); // Hide keyboard on mobile
+        } else {
+            // Fail
+            loginError.textContent = "Incorrect password";
+            passwordInput.value = "";
+
+            // Shake animation
+            const card = document.querySelector('.login-card');
+            card.classList.remove('shake');
+            void card.offsetWidth; // trigger reflow
+            card.classList.add('shake');
+        }
+    }
+
+    // 3. Event Listeners
+    loginBtn.addEventListener('click', attemptLogin);
+
+    passwordInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            attemptLogin();
+        }
+    });
+})();
