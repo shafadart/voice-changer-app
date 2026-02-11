@@ -17,7 +17,7 @@ Record your voice, apply funny effects, and share directly to Messenger/WhatsApp
 
 ## 🌐 Deployment (Netlify)
 1. Push this code to GitHub.
-2. Log in to [Netlify](https://app.netlify.com/).
+2. Log in to [Vercel](vercel.com).
 3. Click **"Add new site"** -> **"Import an existing project"**.
 4. Connect GitHub and select this repo.
 5. Click **"Deploy"** (No build settings needed for this static app).
