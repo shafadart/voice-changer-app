@@ -283,9 +283,14 @@ async function processAudioEffect(effectType) {
         // 3. Configure Offline Renderer
         let playbackRate = 1.0;
         if (effectType === 'helium') playbackRate = 1.4;
+        if (effectType === 'child') playbackRate = 1.6; // High pitch
+        if (effectType === 'women') playbackRate = 1.25; // Slightly high
         if (effectType === 'giant') playbackRate = 0.7;
+        if (effectType === 'gorilla') playbackRate = 0.65; // Very deep
         if (effectType === 'robot') playbackRate = 1.0;
         if (effectType === 'cave') playbackRate = 1.0;
+        if (effectType === 'musician') playbackRate = 1.0;
+        if (effectType === 'echo') playbackRate = 1.0;
 
         // Calculate duration and length
         // FIX: Force 44100Hz output to prevent "fast speech" issues on mobile (48k/96k mismatches)
@@ -294,8 +299,12 @@ async function processAudioEffect(effectType) {
         const originalDuration = audioBuffer.duration;
         const processedDuration = originalDuration / playbackRate;
 
-        // Add extra time for reverb tail if needed
-        const tailSeconds = (effectType === 'cave') ? 2.0 : 0.5;
+        // Add extra time for reverb/echo tail if needed
+        let tailSeconds = 0.5;
+        if (effectType === 'cave') tailSeconds = 2.0;
+        if (effectType === 'musician') tailSeconds = 1.5;
+        if (effectType === 'echo') tailSeconds = 2.0;
+
         const totalDuration = processedDuration + tailSeconds;
 
         const length = Math.ceil(totalDuration * TARGET_SAMPLE_RATE);
@@ -336,35 +345,70 @@ async function processAudioEffect(effectType) {
 
             oscillator.start();
         }
-        else if (effectType === 'cave') {
-            // Reverb
+        else if (effectType === 'cave' || effectType === 'musician') {
+            // Reverb (Convolver)
             const convolver = offlineRenderer.createConvolver();
+            const rate = TARGET_SAMPLE_RATE;
 
-            // Impulse Response
-            const impulseLen = sampleRate * 2.0;
-            const impulse = offlineRenderer.createBuffer(2, impulseLen, sampleRate);
+            // Adjust decay based on effect
+            const decay = (effectType === 'cave') ? 2.5 : 1.0; // Musician has shorter reverb
+            const impulseLen = rate * decay;
+            const impulse = offlineRenderer.createBuffer(2, impulseLen, rate);
             const impulseL = impulse.getChannelData(0);
             const impulseR = impulse.getChannelData(1);
 
             for (let i = 0; i < impulseLen; i++) {
-                const decay = 2.0;
                 const n = impulseLen - i;
-                const vol = Math.pow(n / impulseLen, decay);
+                const vol = Math.pow(n / impulseLen, 2.0); // Simple linear-ish decay
                 impulseL[i] = (Math.random() * 2 - 1) * vol;
                 impulseR[i] = (Math.random() * 2 - 1) * vol;
             }
             convolver.buffer = impulse;
 
             // Dry/Wet Mix
-            // Connect Source -> Dest (Dry)
-            // Connect Source -> Convolver -> Dest (Wet)
-            // But usually for cave we want mostly wet
+            const dryGain = offlineRenderer.createGain();
+            const wetGain = offlineRenderer.createGain();
+
+            if (effectType === 'cave') {
+                dryGain.gain.value = 0.3; // Mostly wet
+                wetGain.gain.value = 0.9;
+            } else { // musician
+                dryGain.gain.value = 0.8; // Mostly dry (clarity)
+                wetGain.gain.value = 0.4; // Subtle reverb
+            }
+
+            source.connect(dryGain);
+            dryGain.connect(destination);
+
             source.connect(convolver);
-            convolver.connect(destination);
-            // Also connect dry for clarity?
-            // source.connect(destination); 
+            convolver.connect(wetGain);
+            wetGain.connect(destination);
+        }
+        else if (effectType === 'echo') {
+            // Delay + Feedback
+            const delayTime = 0.3; // 300ms
+
+            const delayNode = offlineRenderer.createDelay();
+            delayNode.delayTime.value = delayTime;
+
+            const feedbackGain = offlineRenderer.createGain();
+            feedbackGain.gain.value = 0.4; // 40% feedback
+
+            // Source -> Dest (Direct)
+            source.connect(destination);
+
+            // Source -> Delay -> Dest
+            //      ^      |
+            //      |______| (Feedback)
+
+            source.connect(delayNode);
+            delayNode.connect(destination);
+
+            delayNode.connect(feedbackGain);
+            feedbackGain.connect(delayNode);
         }
         else {
+            // Simple Pitch Shift (Child, Women, Gorilla, Helium, Giant, Normal)
             source.connect(destination);
         }
 
